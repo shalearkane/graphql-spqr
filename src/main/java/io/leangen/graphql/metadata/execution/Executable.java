@@ -1,12 +1,10 @@
 package io.leangen.graphql.metadata.execution;
 
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
 import java.lang.reflect.Parameter;
 
-public abstract class Executable<T extends AnnotatedElement & Member> {
+public abstract class Executable<T> {
 
     T delegate;
 
