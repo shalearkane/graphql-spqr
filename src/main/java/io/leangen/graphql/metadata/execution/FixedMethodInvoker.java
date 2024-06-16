@@ -14,6 +14,7 @@ public class FixedMethodInvoker extends MethodInvoker {
 
     public FixedMethodInvoker(Supplier<Object> targetSupplier, Method resolverMethod, AnnotatedType enclosingType) {
         super(resolverMethod, enclosingType);
+        System.out.println("FixedMethodInvoker is getting invoked");
         this.targetSupplier = targetSupplier;
     }
 
