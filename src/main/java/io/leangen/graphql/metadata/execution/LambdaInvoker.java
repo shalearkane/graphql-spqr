@@ -23,7 +23,8 @@ public class LambdaInvoker extends Executable<Method> {
             try {
                 Function<Object, Object> getterFunction = mkCallFunction(candidateMethod.getDeclaringClass(), candidateMethod.getName(), candidateMethod.getReturnType());
                 return Optional.of(getterFunction);
-            } catch (Throwable ignore) {
+            } catch (Throwable e) {
+                System.out.println(e);
                 //
                 // if we cant make a dynamic lambda here, then we give up and let the old property fetching code do its thing
                 // this can happen on runtimes such as GraalVM native where LambdaMetafactory is not supported
@@ -96,7 +97,7 @@ public class LambdaInvoker extends Executable<Method> {
      */
     @Override
     public int getParameterCount() {
-        return 1;
+        return this.delegate.getParameterCount();
     }
 
     @Override
