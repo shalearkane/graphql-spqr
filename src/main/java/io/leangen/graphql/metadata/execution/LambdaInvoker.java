@@ -4,8 +4,10 @@ import io.leangen.graphql.util.ClassUtils;
 
 import java.lang.invoke.*;
 import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -19,13 +21,13 @@ public class LambdaInvoker extends Executable<Method> {
     private final Function<Object, Object> lambdaGetter;
 
     public static Optional<Function<Object, Object>> createGetter(Method candidateMethod) throws Exception {
-        if (candidateMethod.getParameterCount() < 1) {
-            System.out.println("Yay yay");
-        }
-        if (candidateMethod.getParameterCount() != 0) {
-            throw new Exception("more than one arg or zero args");
-        }
         if (candidateMethod != null) {
+//            if (candidateMethod.getParameterCount() < 1) {
+//                System.out.println("Yay yay");
+//            } else {
+//                throw new Exception("more than one arg or zero args");
+//            }
+
             try {
                 Function<Object, Object> getterFunction = mkCallFunction(candidateMethod, candidateMethod.getDeclaringClass(), candidateMethod.getName(), candidateMethod.getReturnType());
                 return Optional.of(getterFunction);
@@ -50,7 +52,7 @@ public class LambdaInvoker extends Executable<Method> {
         MethodHandle virtualMethodHandle = lookup.unreflect(m);
 //        MethodHandle virtualMethodHandle = lookup.findVirtual(m.getDeclaringClass(), m.getName(), MethodType.methodType(m.getReturnType()));
         System.out.println(m.getReturnType());
-        System.out.println(m.getDeclaringClass());
+        System.out.println(m.getDeclaringClass().equals(Object.class));
         System.out.println("lookup successful");
         CallSite site = LambdaMetafactory.metafactory(lookup,
                 "apply",
@@ -60,7 +62,7 @@ public class LambdaInvoker extends Executable<Method> {
                 MethodType.methodType(m.getReturnType(), m.getDeclaringClass()));
         System.out.println("Successfully executed site");
         @SuppressWarnings("unchecked")
-        Function getterFunction = (Function) site.getTarget().invokeExact();
+        Function<Object, Object> getterFunction = (Function<Object, Object>) site.getTarget().invokeExact();
         return getterFunction;
     }
 
@@ -90,14 +92,37 @@ public class LambdaInvoker extends Executable<Method> {
     }
 
     @Override
-    public Object execute(Object target, Object[] args) {
-//        System.out.println(args);
+    public Object execute(Object target, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        if (target == null) {
+            System.out.println("Heading for disaster");
+        }
         if (args.length == 0) {
             System.out.println("Args length is zero zero zero");
+            System.out.println(target);
+            System.out.println(this.delegate.getName());
+            try {
+                return lambdaGetter.apply(target);
+            } catch (Exception e) {
+                System.out.println(this.delegate.getDeclaringClass() + " funny ");
+                for (java.lang.reflect.Parameter parameter : this.delegate.getParameters()) {
+                    System.out.print(parameter);
+                }
+                System.out.println(e);
+                try {
+                    return this.delegate.invoke(target, args);
+                } catch (Exception ex) {
+                    System.out.println("Invoke failed tooo");
+                    System.out.println(this.delegate);
+                    System.out.println(target);
+                    System.out.println(args);
+                }
+            }
+
             return null;
         }
 
-        return lambdaGetter.apply(args[0]);
+        System.out.println("More than one arg oh shit");
+        return this.delegate.invoke(target, args);
     }
 
     @Override
