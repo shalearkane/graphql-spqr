@@ -18,10 +18,16 @@ public class LambdaInvoker extends Executable<Method> {
     private final AnnotatedType returnType;
     private final Function<Object, Object> lambdaGetter;
 
-    public static Optional<Function<Object, Object>> createGetter(Method candidateMethod) {
+    public static Optional<Function<Object, Object>> createGetter(Method candidateMethod) throws Exception {
+        if (candidateMethod.getParameterCount() < 1) {
+            System.out.println("Yay yay");
+        }
+        if (candidateMethod.getParameterCount() != 0) {
+            throw new Exception("more than one arg or zero args");
+        }
         if (candidateMethod != null) {
             try {
-                Function<Object, Object> getterFunction = mkCallFunction(candidateMethod.getDeclaringClass(), candidateMethod.getName(), candidateMethod.getReturnType());
+                Function<Object, Object> getterFunction = mkCallFunction(candidateMethod, candidateMethod.getDeclaringClass(), candidateMethod.getName(), candidateMethod.getReturnType());
                 return Optional.of(getterFunction);
             } catch (Throwable e) {
                 System.out.println(e);
@@ -37,17 +43,24 @@ public class LambdaInvoker extends Executable<Method> {
         return Optional.empty();
     }
 
-    static Function<Object, Object> mkCallFunction(Class<?> targetClass, String targetMethod, Class<?> targetMethodReturnType) throws Throwable {
-        MethodHandles.Lookup lookup = getLookup(targetClass);
-        MethodHandle virtualMethodHandle = lookup.findVirtual(targetClass, targetMethod, MethodType.methodType(targetMethodReturnType));
+    static Function<Object, Object> mkCallFunction(Method m, Class<?> targetClass, String targetMethod, Class<?> targetMethodReturnType) throws Throwable {
+        m.setAccessible(true);
+        MethodHandles.Lookup lookupMe = MethodHandles.lookup();
+        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(m.getDeclaringClass(), lookupMe);
+        MethodHandle virtualMethodHandle = lookup.unreflect(m);
+//        MethodHandle virtualMethodHandle = lookup.findVirtual(m.getDeclaringClass(), m.getName(), MethodType.methodType(m.getReturnType()));
+        System.out.println(m.getReturnType());
+        System.out.println(m.getDeclaringClass());
+        System.out.println("lookup successful");
         CallSite site = LambdaMetafactory.metafactory(lookup,
                 "apply",
                 MethodType.methodType(Function.class),
                 MethodType.methodType(Object.class, Object.class),
                 virtualMethodHandle,
-                MethodType.methodType(targetMethodReturnType, targetClass));
+                MethodType.methodType(m.getReturnType(), m.getDeclaringClass()));
+        System.out.println("Successfully executed site");
         @SuppressWarnings("unchecked")
-        Function<Object, Object> getterFunction = (Function<Object, Object>) site.getTarget().invokeExact();
+        Function getterFunction = (Function) site.getTarget().invokeExact();
         return getterFunction;
     }
 
@@ -69,8 +82,8 @@ public class LambdaInvoker extends Executable<Method> {
         this.enclosingType = enclosingType;
         this.returnType = resolveReturnType(enclosingType);
         final Optional<Function<Object, Object>> lg = this.createGetter(resolverMethod);
-        if(lg.isPresent()) {
-            this.lambdaGetter =lg.get();
+        if (lg.isPresent()) {
+            this.lambdaGetter = lg.get();
         } else {
             throw new Exception("Cannot create a lambda getter for " + resolverMethod.getName());
         }
@@ -78,6 +91,12 @@ public class LambdaInvoker extends Executable<Method> {
 
     @Override
     public Object execute(Object target, Object[] args) {
+//        System.out.println(args);
+        if (args.length == 0) {
+            System.out.println("Args length is zero zero zero");
+            return null;
+        }
+
         return lambdaGetter.apply(args[0]);
     }
 
@@ -93,6 +112,7 @@ public class LambdaInvoker extends Executable<Method> {
 
     /**
      * {@inheritDoc}
+     *
      * @see java.lang.reflect.Executable#getParameterCount
      */
     @Override
