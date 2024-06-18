@@ -22,8 +22,8 @@ public class LambdaInvoker extends Executable<Method> {
 
     public static Optional<Function<Object, Object>> createGetter(Method candidateMethod) throws Exception {
         if (candidateMethod != null) {
-            if (candidateMethod.getParameterCount() > 0)  {
-                throw new Exception("more than one arg or zero args");
+            if (candidateMethod.getParameterCount() > 0) {
+                throw new Exception("Cannot be called using LambdaInvoker");
             }
 
             try {
@@ -48,76 +48,28 @@ public class LambdaInvoker extends Executable<Method> {
         MethodHandles.Lookup lookupMe = MethodHandles.lookup();
         MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(m.getDeclaringClass(), lookupMe);
         MethodHandle virtualMethodHandle = lookup.unreflect(m);
-//        MethodHandle virtualMethodHandle = lookup.findVirtual(m.getDeclaringClass(), m.getName(), MethodType.methodType(m.getReturnType()));
-        CallSite site = LambdaMetafactory.metafactory(lookup,
-                "apply",
-                MethodType.methodType(Function.class),
-                MethodType.methodType(Object.class, Object.class),
-                virtualMethodHandle,
-                MethodType.methodType(m.getReturnType(), m.getDeclaringClass()));
-        @SuppressWarnings("unchecked")
-        Function<Object, Object> getterFunction = (Function<Object, Object>) site.getTarget().invokeExact();
+        CallSite site = LambdaMetafactory.metafactory(lookup, "apply", MethodType.methodType(Function.class), MethodType.methodType(Object.class, Object.class), virtualMethodHandle, MethodType.methodType(m.getReturnType(), m.getDeclaringClass()));
+        @SuppressWarnings("unchecked") Function<Object, Object> getterFunction = (Function<Object, Object>) site.getTarget().invokeExact();
         return getterFunction;
     }
-
-    private static MethodHandles.Lookup getLookup(Class<?> targetClass) {
-        MethodHandles.Lookup lookupMe = MethodHandles.lookup();
-        //
-        // This is a Java 9+ approach to method look up allowing private access
-        //
-        try {
-            return MethodHandles.privateLookupIn(targetClass, lookupMe);
-        } catch (IllegalAccessException e) {
-            return lookupMe;
-        }
-    }
-
 
     public LambdaInvoker(Method resolverMethod, AnnotatedType enclosingType) throws Exception {
         this.delegate = resolverMethod;
         this.enclosingType = enclosingType;
         this.returnType = resolveReturnType(enclosingType);
         final Optional<Function<Object, Object>> lg = this.createGetter(resolverMethod);
-        if (lg.isPresent()) {
-            this.lambdaGetter = lg.get();
-        } else {
+        if (lg.isEmpty()) {
             throw new Exception("Cannot create a lambda getter for " + resolverMethod.getName());
+
         }
+
+        this.lambdaGetter = lg.get();
         System.out.println("LambdaInvoker is getting invoked for " + resolverMethod.getName());
     }
 
     @Override
-    public Object execute(Object target, Object[] args) throws InvocationTargetException, IllegalAccessException {
-        if (target == null) {
-            System.out.println("Heading for disaster");
-        }
-        if (args.length == 0) {
-            System.out.println("Args length is zero zero zero");
-            System.out.println(target);
-            System.out.println(this.delegate.getName());
-            try {
-                return lambdaGetter.apply(target);
-            } catch (Exception e) {
-                System.out.println(this.delegate.getDeclaringClass() + " funny ");
-                for (java.lang.reflect.Parameter parameter : this.delegate.getParameters()) {
-                    System.out.print(parameter);
-                }
-                System.out.println(e);
-                try {
-                    return delegate.invoke(target, args);
-                } catch (Exception ex) {
-                    System.out.println("Invoke failed tooo");
-                    System.out.println(this.delegate);
-                    System.out.println(target);
-                    System.out.println(args);
-                }
-            } finally {
-                System.out.println("lambdaGetter worked");
-            }
-        }
-
-        System.out.println("More than one arg oh shit");
-        return delegate.invoke(target, args);
+    public Object execute(Object target, Object[] args) {
+        return lambdaGetter.apply(target);
     }
 
     @Override
@@ -137,7 +89,7 @@ public class LambdaInvoker extends Executable<Method> {
      */
     @Override
     public int getParameterCount() {
-        return this.delegate.getParameterCount();
+        return 0;
     }
 
     @Override
