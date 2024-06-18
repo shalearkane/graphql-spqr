@@ -1,0 +1,4 @@
+BatchingTest -> Complete Failure (5/6)
+GenericsTest -> Some Failures (2/12)
+InterceptorTest -> One Failure (1/5)
+SchemaTest -> Errored Half of the Time (2/4)

@@ -22,11 +22,9 @@ public class LambdaInvoker extends Executable<Method> {
 
     public static Optional<Function<Object, Object>> createGetter(Method candidateMethod) throws Exception {
         if (candidateMethod != null) {
-//            if (candidateMethod.getParameterCount() < 1) {
-//                System.out.println("Yay yay");
-//            } else {
-//                throw new Exception("more than one arg or zero args");
-//            }
+            if (candidateMethod.getParameterCount() > 0)  {
+                throw new Exception("more than one arg or zero args");
+            }
 
             try {
                 Function<Object, Object> getterFunction = mkCallFunction(candidateMethod, candidateMethod.getDeclaringClass(), candidateMethod.getName(), candidateMethod.getReturnType());
@@ -51,16 +49,12 @@ public class LambdaInvoker extends Executable<Method> {
         MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(m.getDeclaringClass(), lookupMe);
         MethodHandle virtualMethodHandle = lookup.unreflect(m);
 //        MethodHandle virtualMethodHandle = lookup.findVirtual(m.getDeclaringClass(), m.getName(), MethodType.methodType(m.getReturnType()));
-        System.out.println(m.getReturnType());
-        System.out.println(m.getDeclaringClass().equals(Object.class));
-        System.out.println("lookup successful");
         CallSite site = LambdaMetafactory.metafactory(lookup,
                 "apply",
                 MethodType.methodType(Function.class),
                 MethodType.methodType(Object.class, Object.class),
                 virtualMethodHandle,
                 MethodType.methodType(m.getReturnType(), m.getDeclaringClass()));
-        System.out.println("Successfully executed site");
         @SuppressWarnings("unchecked")
         Function<Object, Object> getterFunction = (Function<Object, Object>) site.getTarget().invokeExact();
         return getterFunction;
