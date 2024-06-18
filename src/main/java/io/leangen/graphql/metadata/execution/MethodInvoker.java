@@ -16,10 +16,10 @@ public class MethodInvoker extends Executable<Method> {
     private final AnnotatedType returnType;
 
     public MethodInvoker(Method resolverMethod, AnnotatedType enclosingType) {
-        System.out.println("MethodInvoker getting invoked");
         this.delegate = resolverMethod;
         this.enclosingType = enclosingType;
         this.returnType = resolveReturnType(enclosingType);
+        System.out.println("MethodInvoker is getting invoked for " + resolverMethod.getName());
     }
 
     @Override

@@ -83,6 +83,7 @@ public class LambdaInvoker extends Executable<Method> {
         } else {
             throw new Exception("Cannot create a lambda getter for " + resolverMethod.getName());
         }
+        System.out.println("LambdaInvoker is getting invoked for " + resolverMethod.getName());
     }
 
     @Override
