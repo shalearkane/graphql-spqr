@@ -15,15 +15,18 @@ import java.util.function.Function;
  * Created by bojan.tomic on 7/20/16.
  */
 public class LambdaInvoker extends Executable<Method> {
-
     private final AnnotatedType enclosingType;
     private final AnnotatedType returnType;
-    private final Function<Object, Object> lambdaGetter;
+    final Function<Object, Object> lambdaGetter;
 
-    public static Optional<Function<Object, Object>> createGetter(Method candidateMethod) throws Exception {
+    private static final Parameter[] NO_PARAMETERS = {};
+    private static final AnnotatedType[] NO_ANNOTATED_TYPES = {};
+
+
+    public static Optional<Function<Object, Object>> createGetter(final Method candidateMethod) throws Exception {
         if (candidateMethod != null) {
             if (candidateMethod.getParameterCount() > 0) {
-                throw new Exception("Cannot be called using LambdaInvoker");
+                throw new Exception(candidateMethod.getName() + " cannot be called using LambdaInvoker");
             }
 
             try {
@@ -43,7 +46,7 @@ public class LambdaInvoker extends Executable<Method> {
         return Optional.empty();
     }
 
-    static Function<Object, Object> mkCallFunction(Method m, Class<?> targetClass, String targetMethod, Class<?> targetMethodReturnType) throws Throwable {
+    static Function<Object, Object> mkCallFunction(final Method m, final Class<?> targetClass, final String targetMethod, final Class<?> targetMethodReturnType) throws Throwable {
         m.setAccessible(true);
         MethodHandles.Lookup lookupMe = MethodHandles.lookup();
         MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(m.getDeclaringClass(), lookupMe);
@@ -53,7 +56,7 @@ public class LambdaInvoker extends Executable<Method> {
         return getterFunction;
     }
 
-    public LambdaInvoker(Method resolverMethod, AnnotatedType enclosingType) throws Exception {
+    public LambdaInvoker(final Method resolverMethod, final AnnotatedType enclosingType) throws Exception {
         this.delegate = resolverMethod;
         this.enclosingType = enclosingType;
         this.returnType = resolveReturnType(enclosingType);
@@ -68,17 +71,17 @@ public class LambdaInvoker extends Executable<Method> {
     }
 
     @Override
-    public Object execute(Object target, Object[] args) {
+    public Object execute(final Object target, final Object[] args) {
         return lambdaGetter.apply(target);
     }
 
     @Override
-    public AnnotatedType getReturnType() {
+    final public AnnotatedType getReturnType() {
         return returnType;
     }
 
 
-    private AnnotatedType resolveReturnType(AnnotatedType enclosingType) {
+    final private AnnotatedType resolveReturnType(final AnnotatedType enclosingType) {
         return ClassUtils.getReturnType(delegate, enclosingType);
     }
 
@@ -88,17 +91,17 @@ public class LambdaInvoker extends Executable<Method> {
      * @see java.lang.reflect.Executable#getParameterCount
      */
     @Override
-    public int getParameterCount() {
+    final public int getParameterCount() {
         return 0;
     }
 
     @Override
-    public AnnotatedType[] getAnnotatedParameterTypes() {
-        return ClassUtils.getParameterTypes(delegate, enclosingType);
+    final public AnnotatedType[] getAnnotatedParameterTypes() {
+        return NO_ANNOTATED_TYPES;
     }
 
     @Override
-    public Parameter[] getParameters() {
-        return delegate.getParameters();
+    final public Parameter[] getParameters() {
+        return NO_PARAMETERS;
     }
 }

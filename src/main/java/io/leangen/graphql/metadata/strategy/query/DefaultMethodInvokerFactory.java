@@ -1,9 +1,6 @@
 package io.leangen.graphql.metadata.strategy.query;
 
-import io.leangen.graphql.metadata.execution.Executable;
-import io.leangen.graphql.metadata.execution.FixedMethodInvoker;
-import io.leangen.graphql.metadata.execution.LambdaInvoker;
-import io.leangen.graphql.metadata.execution.MethodInvoker;
+import io.leangen.graphql.metadata.execution.*;
 
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
@@ -13,8 +10,6 @@ public class DefaultMethodInvokerFactory implements MethodInvokerFactory {
 
     @Override
     public Executable<Method> create(Supplier<Object> targetSupplier, Method resolverMethod, AnnotatedType enclosingType, Class<?> exposedType) {
-
-
         if (targetSupplier == null) {
             try {
                 return new LambdaInvoker(resolverMethod, enclosingType);
@@ -22,6 +17,13 @@ public class DefaultMethodInvokerFactory implements MethodInvokerFactory {
                 System.out.println(e);
                 return new MethodInvoker(resolverMethod, enclosingType);
             }
-        } else return new FixedMethodInvoker(targetSupplier, resolverMethod, enclosingType);
+        } else {
+            try {
+                return new FixedLambdaInvoker(targetSupplier, resolverMethod, enclosingType);
+            } catch (Exception e) {
+                System.out.println(e);
+                return new FixedMethodInvoker(targetSupplier, resolverMethod, enclosingType);
+            }
+        }
     }
 }
