@@ -13,12 +13,15 @@ public class DefaultMethodInvokerFactory implements MethodInvokerFactory {
 
     @Override
     public Executable<Method> create(Supplier<Object> targetSupplier, Method resolverMethod, AnnotatedType enclosingType, Class<?> exposedType) {
-        try {
-            return new LambdaInvoker(resolverMethod, enclosingType);
-        } catch (Exception e) {
-            System.out.println(e);
 
-        }
-        return targetSupplier == null ? new MethodInvoker(resolverMethod, enclosingType) : new FixedMethodInvoker(targetSupplier, resolverMethod, enclosingType);
+
+        if (targetSupplier == null) {
+            try {
+                return new LambdaInvoker(resolverMethod, enclosingType);
+            } catch (Exception e) {
+                System.out.println(e);
+                return new MethodInvoker(resolverMethod, enclosingType);
+            }
+        } else return new FixedMethodInvoker(targetSupplier, resolverMethod, enclosingType);
     }
 }

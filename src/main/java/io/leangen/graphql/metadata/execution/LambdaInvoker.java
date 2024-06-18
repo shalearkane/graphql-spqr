@@ -103,20 +103,20 @@ public class LambdaInvoker extends Executable<Method> {
                 }
                 System.out.println(e);
                 try {
-                    return this.delegate.invoke(target, args);
+                    return delegate.invoke(target, args);
                 } catch (Exception ex) {
                     System.out.println("Invoke failed tooo");
                     System.out.println(this.delegate);
                     System.out.println(target);
                     System.out.println(args);
                 }
+            } finally {
+                System.out.println("lambdaGetter worked");
             }
-
-            return null;
         }
 
         System.out.println("More than one arg oh shit");
-        return this.delegate.invoke(target, args);
+        return delegate.invoke(target, args);
     }
 
     @Override
