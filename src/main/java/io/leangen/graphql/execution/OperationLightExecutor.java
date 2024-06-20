@@ -11,6 +11,7 @@ import io.leangen.graphql.metadata.Operation;
 import io.leangen.graphql.metadata.Resolver;
 import io.leangen.graphql.metadata.strategy.value.ValueMapper;
 import io.leangen.graphql.util.Utils;
+import jdk.jshell.spi.ExecutionControl;
 import org.dataloader.BatchLoaderEnvironment;
 
 import java.util.*;
@@ -58,7 +59,7 @@ public class OperationLightExecutor extends OperationExecutor implements LightDa
 
     @Override
     public Object get(DataFetchingEnvironment env) throws Exception {
-       return null;
+       throw new ExecutionControl.NotImplementedException("Light Fetcher does not implement dfe");
     }
 
     public Object execute(List<Object> keys, Map<String, Object> arguments, BatchLoaderEnvironment env) throws Exception {
