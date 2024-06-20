@@ -113,10 +113,7 @@ public class ResolutionEnvironment {
     }
 
     public final DataFetchingEnvironment getDataFetchingEnvironment() {
-        if (isDataFetchingEnvironmentSupplied) {
-            return dataFetchingEnvironmentSupplier.get();
-        }
-        return dataFetchingEnvironment;
+        return isDataFetchingEnvironmentSupplied == true ? dataFetchingEnvironmentSupplier.get() : dataFetchingEnvironment;
     }
 
     public <T, S> S convertOutput(T output, AnnotatedElement element, AnnotatedType type) {

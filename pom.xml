@@ -4,7 +4,7 @@
     <groupId>io.leangen.graphql</groupId>
     <artifactId>spqr</artifactId>
     <packaging>jar</packaging>
-    <version>0.12.6</version>
+    <version>0.12.7</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>GraphQL SPQR</name>
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java</artifactId>
-            <version>21.3</version>
+            <version>21.5</version>
         </dependency>
         <dependency>
             <groupId>com.graphql-java</groupId>
