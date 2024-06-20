@@ -1,30 +1,27 @@
 package io.leangen.graphql.execution;
 
 import graphql.GraphQLException;
-import graphql.execution.DataFetcherResult;
-import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.LightDataFetcher;
 import io.leangen.graphql.generator.mapping.ArgumentInjector;
 import io.leangen.graphql.generator.mapping.ConverterRegistry;
 import io.leangen.graphql.generator.mapping.DelegatingOutputConverter;
 import io.leangen.graphql.metadata.Operation;
-import io.leangen.graphql.metadata.OperationArgument;
 import io.leangen.graphql.metadata.Resolver;
 import io.leangen.graphql.metadata.strategy.value.ValueMapper;
-import io.leangen.graphql.util.ContextUtils;
 import io.leangen.graphql.util.Utils;
 import org.dataloader.BatchLoaderEnvironment;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static io.leangen.graphql.util.GraphQLUtils.CLIENT_MUTATION_ID;
 
 /**
  * Created by bojan.tomic on 1/29/17.
  */
-public class OperationLightExecutor implements DataFetcher<Object> {
+public class OperationLightExecutor extends OperationExecutor implements LightDataFetcher<Object> {
 
     private final Operation operation;
     private final ValueMapper valueMapper;
@@ -35,6 +32,7 @@ public class OperationLightExecutor implements DataFetcher<Object> {
     private final Map<Resolver, List<ResolverInterceptor>> outerInterceptors;
 
     public OperationLightExecutor(Operation operation, ValueMapper valueMapper, GlobalEnvironment globalEnvironment, ResolverInterceptorFactory interceptorFactory) {
+        super(operation, valueMapper, globalEnvironment, interceptorFactory);
         this.operation = operation;
         this.valueMapper = valueMapper;
         this.globalEnvironment = globalEnvironment;
@@ -47,17 +45,20 @@ public class OperationLightExecutor implements DataFetcher<Object> {
     }
 
     @Override
-    public Object get(DataFetchingEnvironment env) throws Exception {
-        ContextUtils.setClientMutationId(env.getContext(), env.getArgument(CLIENT_MUTATION_ID));
-
-        Map<String, Object> arguments = env.getArguments();
-        Resolver resolver = this.operation.getApplicableResolver(arguments.keySet());
+    public Object get(GraphQLFieldDefinition fieldDefinition, Object sourceObject, Supplier<DataFetchingEnvironment> env) throws Exception {
+        Map<String, Object> NO_ARGUMENTS = new HashMap<>();
+        Resolver resolver = this.operation.getApplicableResolver(NO_ARGUMENTS.keySet());
         if (resolver == null) {
             throw new GraphQLException("Resolver for operation " + operation.getName() + " accepting arguments: "
-                    + arguments.keySet() + " not implemented");
+                    + NO_ARGUMENTS.keySet() + " not implemented");
         }
         ResolutionEnvironment resolutionEnvironment = new ResolutionEnvironment(resolver, env, this.valueMapper, this.globalEnvironment, this.converterRegistry, this.derivedTypes);
-        return execute(resolver, resolutionEnvironment, arguments);
+        return execute(resolver, resolutionEnvironment, sourceObject);
+    }
+
+    @Override
+    public Object get(DataFetchingEnvironment env) throws Exception {
+       return null;
     }
 
     public Object execute(List<Object> keys, Map<String, Object> arguments, BatchLoaderEnvironment env) throws Exception {
@@ -75,34 +76,22 @@ public class OperationLightExecutor implements DataFetcher<Object> {
      *
      * @param resolver The resolver to be invoked once the arguments are prepared
      * @param resolutionEnvironment An object containing all contextual information needed during operation resolution
-     * @param rawArguments Raw input arguments provided by the client
+     * @param sourceObject Object of which the method is being called
      *
      * @return The result returned by the underlying method/field, potentially proxied and wrapped
      *
      * @throws Exception If the invocation of the underlying method/field or any of the interceptors throws
      */
-    private Object execute(Resolver resolver, ResolutionEnvironment resolutionEnvironment, Map<String, Object> rawArguments)
+    private Object execute(Resolver resolver, ResolutionEnvironment resolutionEnvironment, Object sourceObject)
             throws Exception {
-
-        int queryArgumentsCount = resolver.getArguments().size();
-
-        Object[] args = new Object[queryArgumentsCount];
-        for (int i = 0; i < queryArgumentsCount; i++) {
-            OperationArgument argDescriptor =  resolver.getArguments().get(i);
-            Object rawArgValue = rawArguments.get(argDescriptor.getName());
-
-            args[i] = resolutionEnvironment.getInputValue(rawArgValue, argDescriptor);
-        }
-        if (!resolutionEnvironment.errors.isEmpty()) {
-            return DataFetcherResult.newResult().errors(resolutionEnvironment.errors).build();
-        }
-        InvocationContext invocationContext = new InvocationContext(operation, resolver, resolutionEnvironment, args);
+        final Object[] NO_ARGUMENTS = new Object[]{};
+        InvocationContext invocationContext = new InvocationContext(operation, resolver, resolutionEnvironment, NO_ARGUMENTS);
         Queue<ResolverInterceptor> interceptors = new ArrayDeque<>(this.outerInterceptors.get(resolver));
         interceptors.add((ctx, cont) -> resolutionEnvironment.convertOutput(cont.proceed(ctx), resolver.getTypedElement(), resolver.getReturnType()));
         interceptors.addAll(this.innerInterceptors.get(resolver));
         interceptors.add((ctx, cont) -> {
             try {
-                return resolver.resolve(ctx.getResolutionEnvironment().context, ctx.getArguments());
+                return resolver.resolve(sourceObject, NO_ARGUMENTS);
             } catch (ReflectiveOperationException e) {
                 sneakyThrow(unwrap(e));
             }
