@@ -5,6 +5,7 @@ import graphql.schema.*;
 import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.graphql.annotations.GraphQLId;
 import io.leangen.graphql.execution.OperationExecutor;
+import io.leangen.graphql.execution.OperationLightExecutor;
 import io.leangen.graphql.generator.mapping.TypeMapper;
 import io.leangen.graphql.generator.mapping.TypeMappingEnvironment;
 import io.leangen.graphql.metadata.*;
@@ -406,7 +407,14 @@ public class OperationMapper {
                 .filter(OperationArgument::isMappable)
                 .map(OperationArgument::getJavaType);
         ValueMapper valueMapper = buildContext.createValueMapper(inputTypes);
-        OperationExecutor executor = new OperationExecutor(operation, valueMapper, buildContext.globalEnvironment, buildContext.interceptorFactory);
+
+        OperationExecutor executor;
+        if (operation.getArguments().size() == 0) {
+            executor = new OperationLightExecutor(operation, valueMapper, buildContext.globalEnvironment, buildContext.interceptorFactory);
+        } else {
+            executor = new OperationExecutor(operation, valueMapper, buildContext.globalEnvironment, buildContext.interceptorFactory);
+        }
+
         if (operation.isBatched()) {
             String loaderName = parentType + ':' + operation.getName();
             BatchLoaderWithContext<?, ?> batchLoader = batchloaderFactory.createBatchLoader(executor);
