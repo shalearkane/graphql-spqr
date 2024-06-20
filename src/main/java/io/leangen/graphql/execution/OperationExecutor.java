@@ -50,7 +50,7 @@ public class OperationExecutor implements DataFetcher<Object> {
     }
 
     public Object get(GraphQLFieldDefinition fieldDefinition, Object sourceObject, Supplier<DataFetchingEnvironment> env) throws Exception {
-        throw new ExecutionControl.NotImplementedException("Light Fetcher does not implement dfe");
+        throw new ExecutionControl.NotImplementedException("Heavy Fetcher does not implement supplier");
     };
 
     @Override
