@@ -5,9 +5,6 @@ import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.execution.ExecutionStepInfo;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLNamedType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
 import io.leangen.graphql.generator.mapping.ArgumentInjectorParams;
 import io.leangen.graphql.generator.mapping.ConverterRegistry;
 import io.leangen.graphql.generator.mapping.DelegatingOutputConverter;
@@ -25,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * @author Bojan Tomic (kaqqao)
@@ -38,9 +36,6 @@ public class ResolutionEnvironment {
     public final Resolver resolver;
     public final ValueMapper valueMapper;
     public final GlobalEnvironment globalEnvironment;
-    public final GraphQLOutputType fieldType;
-    public final GraphQLNamedType parentType;
-    public final GraphQLSchema graphQLSchema;
     public final DataFetchingEnvironment dataFetchingEnvironment;
     public final BatchLoaderEnvironment batchLoaderEnvironment;
     public final Map<String, Object> arguments;
@@ -58,9 +53,6 @@ public class ResolutionEnvironment {
         this.resolver = resolver;
         this.valueMapper = valueMapper;
         this.globalEnvironment = globalEnvironment;
-        this.fieldType = env.getFieldType();
-        this.parentType = (GraphQLNamedType) env.getParentType();
-        this.graphQLSchema = env.getGraphQLSchema();
         this.dataFetchingEnvironment = env;
         this.batchLoaderEnvironment = null;
         this.arguments = new HashMap<>();
@@ -79,11 +71,25 @@ public class ResolutionEnvironment {
         this.resolver = resolver;
         this.valueMapper = valueMapper;
         this.globalEnvironment = globalEnvironment;
-        this.fieldType = inner != null ? inner.getFieldType() : null;
-        this.parentType = inner != null ? (GraphQLNamedType) inner.getParentType() : null;
-        this.graphQLSchema = inner != null ? inner.getGraphQLSchema() : null;
         this.dataFetchingEnvironment = null;
         this.batchLoaderEnvironment = env;
+        this.arguments = new HashMap<>();
+        this.errors = new ArrayList<>();
+        this.converters = converters;
+        this.derivedTypes = derivedTypes;
+    }
+
+    public ResolutionEnvironment(Resolver resolver, Supplier<DataFetchingEnvironment> env, ValueMapper valueMapper, GlobalEnvironment globalEnvironment,
+                                 ConverterRegistry converters, DerivedTypeRegistry derivedTypes) {
+
+        this.context = null;
+        this.rootContext = null;
+        this.batchContext = null;
+        this.resolver = resolver;
+        this.valueMapper = valueMapper;
+        this.globalEnvironment = globalEnvironment;
+        this.dataFetchingEnvironment = null;
+        this.batchLoaderEnvironment = null;
         this.arguments = new HashMap<>();
         this.errors = new ArrayList<>();
         this.converters = converters;

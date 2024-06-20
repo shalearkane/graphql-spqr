@@ -2,6 +2,7 @@ package io.leangen.graphql.generator.mapping.common;
 
 import graphql.Scalars;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLOutputType;
 import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.graphql.annotations.GraphQLId;
@@ -43,7 +44,7 @@ public class IdAdapter implements TypeMapper, ArgumentInjector, OutputConverter<
     public String convertOutput(Object original, AnnotatedType type, ResolutionEnvironment resolutionEnvironment) {
         final String id = resolutionEnvironment.valueMapper.toString(original, type);
         if (type.getAnnotation(GraphQLId.class).relayId()) {
-            return resolutionEnvironment.globalEnvironment.relay.toGlobalId(resolutionEnvironment.parentType.getName(), id);
+            return resolutionEnvironment.globalEnvironment.relay.toGlobalId(((GraphQLNamedType) resolutionEnvironment.dataFetchingEnvironment.getParentType()).getName(), id);
         }
         return id;
     }
